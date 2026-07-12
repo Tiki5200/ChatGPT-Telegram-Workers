@@ -32,7 +32,7 @@ main = './dist/index.js'   # Default use of dist/index.js
 # If you want to know how to obtain the ID of kv_namespaces, please check here.
 # https://github.com/TBXark/ChatGPT-Telegram-Workers/blob/master/doc/en/DEPLOY.md
 kv_namespaces = [
-  { binding = 'DATABASE', id = '', preview_id = '' }
+  { binding = 'DATABASE', id = '560b1c54a68a4cc184b787b176ea7fdb', preview_id = '' }
 ]
 
 
