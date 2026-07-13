@@ -95,8 +95,8 @@ export async function requestCompletionsFromLLM(
     }
 
     const llmParams: LLMChatParams = {
-        prompt: "你现在是Diana",
-        messages: [...history, params],
+        prompt: DIANA_SYSTEM_PROMPT,
+        messages: [...history, params],  
     };
 
     const { text, responses } = await agent.request(
