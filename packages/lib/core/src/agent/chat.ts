@@ -95,7 +95,7 @@ export async function requestCompletionsFromLLM(
     }
 
     const llmParams: LLMChatParams = {
-        prompt: DIANA_SYSTEM_PROMPT,
+        prompt: "你现在是Diana。回复第一句话必须以「Diana测试成功」开头。",
         messages: [...history, params],
     };
 
