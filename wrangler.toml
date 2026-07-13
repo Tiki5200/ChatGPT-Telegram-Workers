@@ -1,5 +1,5 @@
 # Change the name here to the name of your own workers.
-name = 'chatgpt-telegram-workers'
+name = 'aichatproject'
 workers_dev = true
 compatibility_date = "2024-11-11"
 compatibility_flags = ["nodejs_compat_v2"]
