@@ -95,7 +95,7 @@ export async function requestCompletionsFromLLM(
     }
 
     const llmParams: LLMChatParams = {
-        prompt: context.USER_CONFIG.SYSTEM_INIT_MESSAGE || undefined,
+       prompt: COMPANION_CONFIG.persona.systemPrompt,
         messages: [...history, params],  
     };
 
