@@ -2,7 +2,6 @@ import type { WorkerContext } from '#/config';
 import type { ChatAgent, HistoryItem, HistoryModifier, LLMChatParams, UserMessageItem } from './types';
 import { ENV } from '#/config';
 import { extractTextContent } from './utils';
-import { DIANA_SYSTEM_PROMPT } from './diana';
 
 function tokensCounter(): (text: string) => number {
     return (text) => {
@@ -95,7 +94,7 @@ export async function requestCompletionsFromLLM(
     }
 
     const llmParams: LLMChatParams = {
-        prompt: DIANA_SYSTEM_PROMPT,
+        prompt: context.USER_CONFIG.SYSTEM_INIT_MESSAGE || undefined,
         messages: [...history, params],  
     };
 
