@@ -1,3 +1,4 @@
+import { COMPANION_CONFIG } from '#/companion/config';
 import type { WorkerContext } from '#/config';
 import type { ChatAgent, HistoryItem, HistoryModifier, LLMChatParams, UserMessageItem } from './types';
 import { ENV } from '#/config';
