@@ -1,3 +1,4 @@
+keep_vars = true
 # Change the name here to the name of your own workers.
 name = 'aichatproject'
 workers_dev = true
