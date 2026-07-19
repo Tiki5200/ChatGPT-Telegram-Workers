@@ -66,21 +66,56 @@ export const COMPANION_CONFIG = {
 `.trim(),
   },
 
-  memory: {
-    enabled: true,
+memory: {
+  enabled: true,
 
-    // 保留最近25个完整的用户回合，而不是简单保留15条消息。
-    maxTurns: 25,
+  // 最近 30 个完整用户回合
+  maxTurns: 30,
 
-    // 调用模型时，为消息添加内部说话者身份标签。
-    labelSpeakers:  false,
+  // 不再添加“说话者：Diana”
+  labelSpeakers: false,
+},
+
+proactive: {
+  enabled: true,
+
+  // 中国时间
+  utcOffsetHours: 8,
+
+  // 只在 09:00～23:00 主动发消息
+  activeStartHour: 9,
+  activeEndHour: 23,
+
+  // 你最后一次说话后，随机等待 2～5 小时
+  firstDelayMinutes: {
+    min: 120,
+    max: 300,
   },
 
-  features: {
-    memory: true,
-    vision: false,
-    speechToText: false,
-    textToSpeech: false,
-    proactiveMessages: false,
+  // 第一条没回：再随机等 1.5～3 小时
+  secondDelayMinutes: {
+    min: 90,
+    max: 180,
   },
+
+  // 第二条没回：再随机等 4～8 小时
+  thirdDelayMinutes: {
+    min: 240,
+    max: 480,
+  },
+
+  // 一轮沉默最多追发三次
+  maxUnansweredMessages: 3,
+
+  // 一天最多三次
+  dailyLimit: 3,
+},
+
+features: {
+  memory: true,
+  vision: false,
+  speechToText: false,
+  textToSpeech: false,
+  proactiveMessages: true,
+},
 } as const;
