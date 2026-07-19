@@ -113,7 +113,7 @@ proactive: {
 
 features: {
   memory: true,
-  vision: false,
+  vision: true,
   speechToText: false,
   textToSpeech: false,
   proactiveMessages: true,
