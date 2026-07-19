@@ -138,4 +138,4 @@ if (!response.ok) {
       'Image API returned no image',
     );
   };
-｝
+}
