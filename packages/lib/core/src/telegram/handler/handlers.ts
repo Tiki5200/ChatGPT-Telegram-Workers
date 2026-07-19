@@ -1,3 +1,4 @@
+import { recordCompanionActivity } from '#/companion/proactive';
 import type { WorkerContext } from '#/config';
 import type * as Telegram from 'telegram-bot-api-types';
 import type { MessageHandler, UpdateHandler } from './types';
@@ -174,8 +175,13 @@ export class CommandHandler implements MessageHandler {
 }
 
 export class ChatHandler implements MessageHandler {
-    handle = async (message: Telegram.Message, context: WorkerContext): Promise<Response | null> => {
-        const params = await extractUserMessageItem(message, context);
-        return chatWithMessage(message, params, context, null);
-    };
+  handle = async (
+    message: Telegram.Message,
+    context: WorkerContext,
+  ): Promise<Response | null> => {
+    await recordCompanionActivity(message, context);
+
+    const params = await extractUserMessageItem(message, context);
+    return chatWithMessage(message, params, context, null);
+  };
 }
