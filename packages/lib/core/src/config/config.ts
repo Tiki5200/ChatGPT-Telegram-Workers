@@ -204,6 +204,9 @@ export class EnvironmentConfig {
     TELEGRAM_PHOTO_SIZE_OFFSET = 1;
     // 向LLM优先传递图片方式：url, base64
     TELEGRAM_IMAGE_TRANSFER_MODE = 'base64';
+    // Diana 固定参考图
+    DIANA_HUMAN_REFERENCE_URL = '';
+    DIANA_CAT_REFERENCE_URL = '';
     // 模型列表列数
     MODEL_LIST_COLUMNS = 1;
 
