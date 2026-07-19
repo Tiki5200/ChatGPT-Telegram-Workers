@@ -45,3 +45,5 @@ kv_namespaces = [
 
 # TELEGRAM_AVAILABLE_TOKENS = 'token1,token2'
 # CHAT_WHITE_LIST = 'chat_id1,chat_id2'
+[triggers]
+crons = ["*/30 * * * *"]
