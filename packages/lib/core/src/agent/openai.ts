@@ -1,4 +1,5 @@
 import type { AgentUserConfig } from '#/config';
+import { ENV } from '#/config';
 import type {
     AgentEnable,
     AgentModel,
@@ -32,12 +33,58 @@ export class OpenAI implements ChatAgent {
         const { prompt, messages } = params;
         const url = `${context.OPENAI_API_BASE}/chat/completions`;
         const header = bearerHeader(openAIApiKey(context));
-        const body = {
-            ...(context.OPENAI_API_EXTRA_PARAMS || {}),
-            model: context.OPENAI_CHAT_MODEL,
-            messages: await renderOpenAIMessages(prompt, messages, [ImageSupportFormat.URL, ImageSupportFormat.BASE64]),
-            stream: onStream != null,
-        };
+        const wantsCat
+  = /(猫|猫猫|猫形|猫态|兽态|猫耳|尾巴)/i.test(prompt);
+
+const referenceUrl
+  = wantsCat
+    ? ENV.DIANA_CAT_REFERENCE_URL
+    : ENV.DIANA_HUMAN_REFERENCE_URL;
+
+const identityInstruction
+  = wantsCat
+    ? `
+Use the cat in the reference image as Diana.
+Preserve the same cat identity, face, fur color,
+body shape and overall appearance.
+Only change the pose, expression, camera angle,
+clothing accessories and environment.
+`
+    : `
+Use the adult woman in the reference image as Diana.
+Preserve the same facial identity, age, hairstyle,
+eye color, skin tone and body proportions.
+Only change the pose, expression, outfit,
+camera angle and environment.
+`;
+
+const body: any = {
+  prompt: `
+${identityInstruction}
+
+Requested scene:
+${prompt}
+
+Keep Diana recognizably the same subject
+as the reference image.
+Realistic natural photography.
+`.trim(),
+
+  n: 1,
+  size: context.DALL_E_IMAGE_SIZE,
+  model: context.DALL_E_MODEL,
+};
+
+if (isOpenRouter && referenceUrl) {
+  body.input_references = [
+    {
+      type: 'image_url',
+      image_url: {
+        url: referenceUrl,
+      },
+    },
+  ];
+}
         return convertStringToResponseMessages(requestChatCompletions(url, header, body, onStream, null));
     };
 }
