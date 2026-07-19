@@ -34,7 +34,7 @@ export class OpenAI implements ChatAgent {
         const url = `${context.OPENAI_API_BASE}/chat/completions`;
         const header = bearerHeader(openAIApiKey(context));
         const wantsCat
-  = /(猫|猫猫|猫形|猫态|兽态|猫耳|尾巴)/i.test(prompt);
+  = /(猫|猫猫|猫形|猫态|兽态|爪子|猫耳|尾巴)/i.test(prompt);
 
 const referenceUrl
   = wantsCat
