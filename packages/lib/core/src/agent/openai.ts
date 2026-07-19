@@ -337,10 +337,11 @@ export class Dalle implements ImageAgent {
             },
         );
 
-        const result
-            = await response.json()
-                .catch(() => null)
-                as OpenRouterImageResponse | null;
+        const result = (
+    await response
+        .json()
+        .catch(() => null)
+) as OpenRouterImageResponse | null;
 
         if (!response.ok) {
             throw new Error(
