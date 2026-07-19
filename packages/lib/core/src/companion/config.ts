@@ -29,7 +29,6 @@ export const COMPANION_CONFIG = {
 
 5. 如果无法确定某件事是谁做的，不要擅自编造或交换双方身份。
 
-6. 输入中出现的“[说话者：HL]”或“[说话者：Diana]”属于内部身份标记，不要在回复中复述这些标签。
 
 【对话连续性】
 
@@ -70,11 +69,11 @@ export const COMPANION_CONFIG = {
   memory: {
     enabled: true,
 
-    // 保留最近15个完整的用户回合，而不是简单保留15条消息。
-    maxTurns: 15,
+    // 保留最近25个完整的用户回合，而不是简单保留15条消息。
+    maxTurns: 25,
 
     // 调用模型时，为消息添加内部说话者身份标签。
-    labelSpeakers: true,
+    labelSpeakers:  false,
   },
 
   features: {
