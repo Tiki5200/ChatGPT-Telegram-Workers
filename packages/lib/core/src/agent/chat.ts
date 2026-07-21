@@ -41,7 +41,83 @@ function getMaxTurns(config: CompanionMemoryConfig): number {
 function tokensCounter(): (text: string) => number {
   return text => text.length;
 }
+/**
+ * 获取北京时间以及当前时间段。
+ *
+ * 每次请求模型时重新生成，不写入聊天历史。
+ */
+function buildCurrentTimeContext(): string {
+  const now = new Date();
 
+  const parts = new Intl.DateTimeFormat(
+    'zh-CN',
+    {
+      timeZone: 'Asia/Shanghai',
+
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'long',
+
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+
+      hourCycle: 'h23',
+    },
+  ).formatToParts(now);
+
+  const values = Object.fromEntries(
+    parts.map(part => [
+      part.type,
+      part.value,
+    ]),
+  );
+
+  const hour = Number.parseInt(
+    values.hour,
+    10,
+  );
+
+  let timePeriod: string;
+
+  if (hour >= 0 && hour < 5) {
+    timePeriod = '深夜';
+  } else if (hour < 7) {
+    timePeriod = '清晨';
+  } else if (hour < 11) {
+    timePeriod = '上午';
+  } else if (hour < 14) {
+    timePeriod = '中午';
+  } else if (hour < 18) {
+    timePeriod = '下午';
+  } else if (hour < 22) {
+    timePeriod = '晚上';
+  } else {
+    timePeriod = '夜里';
+  }
+
+  return `
+【当前真实时间】
+
+- 时区：中国标准时间 Asia/Shanghai（UTC+8）
+- 当前日期：${values.year}年${values.month}月${values.day}日
+- 当前星期：${values.weekday}
+- 当前时间：${values.hour}:${values.minute}:${values.second}
+- 当前时间段：${timePeriod}
+
+【时间理解规则】
+
+1. 上面的时间是系统提供的当前真实时间，必须以此为准。
+2. 不要根据聊天语气、历史内容或者自己的感觉猜测时间。
+3. 上午、中午或下午时，不要说“这么晚了”“赶紧睡觉”“该晚安了”。
+4. 只有在夜里，或者 HL 明确表示困了、要睡觉时，才自然建议休息。
+5. 历史聊天中出现“晚安”“昨晚”“明天”等内容，不代表现在仍然是那个时间。
+6. HL 描述过去发生的事情时，要区分事件发生时间和当前时间。
+7. 不必每次主动报时，只需要让回答符合当前时间。
+8. 如果当前时间与上下文中的旧时间发生冲突，以这里的当前真实时间为准。
+`.trim();
+}
 /**
  * 确保历史记录从 user 消息开始。
  *
@@ -366,8 +442,11 @@ export async function requestCompletionsFromLLM(
     throw new Error('Message is empty');
   }
 
-  const prompt =
-    COMPANION_CONFIG.persona.systemPrompt;
+  const prompt = `
+${COMPANION_CONFIG.persona.systemPrompt}
+
+${buildCurrentTimeContext()}
+`.trim();
 
   const counter = tokensCounter();
 
