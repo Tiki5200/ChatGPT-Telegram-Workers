@@ -26,6 +26,40 @@ function fixOpenAICompatibleOptions(options: SseChatCompatibleOptions | null): S
     return options;
 }
 
+function cleanReasoningText(text: string): string {
+    let cleaned = text
+        .replace(
+            /<mm:think>[\s\S]*?<\/mm:think>/gi,
+            '',
+        )
+        .replace(
+            /<think>[\s\S]*?<\/think>/gi,
+            '',
+        );
+
+    const lower = cleaned.toLowerCase();
+
+    const mmThinkIndex = lower.indexOf('<mm:think>');
+    const thinkIndex = lower.indexOf('<think>');
+
+    const unmatchedOpeningIndexes = [
+        mmThinkIndex,
+        thinkIndex,
+    ].filter(index => index !== -1);
+
+    if (unmatchedOpeningIndexes.length > 0) {
+        const firstOpeningIndex = Math.min(
+            ...unmatchedOpeningIndexes,
+        );
+
+        cleaned = cleaned.slice(0, firstOpeningIndex);
+    }
+
+    return cleaned
+        .replace(/<\/?(?:mm:)?think>/gi, '')
+        .trimStart();
+}
+
 export function isJsonResponse(resp: Response): boolean {
     const contentType = resp.headers.get('content-type');
     return contentType?.toLowerCase().includes('application/json') ?? false;
@@ -42,69 +76,142 @@ export function isEventStreamResponse(resp: Response): boolean {
     return false;
 }
 
-export async function streamHandler<T>(stream: AsyncIterable<T>, contentExtractor: (data: T) => string | null, onStream?: (text: string) => Promise<any>): Promise<string> {
+export async function streamHandler<T>(
+    stream: AsyncIterable<T>,
+    contentExtractor: (data: T) => string | null,
+    onStream?: (text: string) => Promise<any>,
+): Promise<string> {
     let contentFull = '';
+    let visibleContentFull = '';
     let lengthDelta = 0;
     let updateStep = 50;
     let lastUpdateTime = Date.now();
+
     try {
         for await (const part of stream) {
             const textPart = contentExtractor(part);
+
             if (!textPart) {
                 continue;
             }
-            lengthDelta += textPart.length;
-            contentFull = contentFull + textPart;
-            if (lengthDelta > updateStep) {
+
+            contentFull += textPart;
+
+            const nextVisibleContent
+                = cleanReasoningText(contentFull);
+
+            const visibleLengthDelta = Math.max(
+                0,
+                nextVisibleContent.length
+                - visibleContentFull.length,
+            );
+
+            visibleContentFull = nextVisibleContent;
+            lengthDelta += visibleLengthDelta;
+
+            if (
+                visibleContentFull.length > 0
+                && lengthDelta > updateStep
+            ) {
                 if (ENV.TELEGRAM_MIN_STREAM_INTERVAL > 0) {
-                    const delta = Date.now() - lastUpdateTime;
-                    if (delta < ENV.TELEGRAM_MIN_STREAM_INTERVAL) {
+                    const delta
+                        = Date.now() - lastUpdateTime;
+
+                    if (
+                        delta
+                        < ENV.TELEGRAM_MIN_STREAM_INTERVAL
+                    ) {
                         continue;
                     }
+
                     lastUpdateTime = Date.now();
                 }
+
                 lengthDelta = 0;
                 updateStep += 20;
-                await onStream?.(`${contentFull}\n...`);
+
+                await onStream?.(
+                    `${visibleContentFull}\n...`,
+                );
             }
         }
     } catch (e) {
         contentFull += `\nError: ${(e as Error).message}`;
     }
-    return contentFull;
+
+    return cleanReasoningText(contentFull);
 }
 
-export async function mapResponseToAnswer(resp: Response, controller: AbortController, options: SseChatCompatibleOptions | null, onStream: ((text: string) => Promise<any>) | null): Promise<string> {
-    options = fixOpenAICompatibleOptions(options || null);
-    if (onStream && resp.ok && isEventStreamResponse(resp)) {
-        const stream = options.streamBuilder?.(resp, controller || new AbortController());
+export async function mapResponseToAnswer(
+    resp: Response,
+    controller: AbortController,
+    options: SseChatCompatibleOptions | null,
+    onStream: ((text: string) => Promise<any>) | null,
+): Promise<string> {
+    options = fixOpenAICompatibleOptions(
+        options || null,
+    );
+
+    if (
+        onStream
+        && resp.ok
+        && isEventStreamResponse(resp)
+    ) {
+        const stream = options.streamBuilder?.(
+            resp,
+            controller || new AbortController(),
+        );
+
         if (!stream) {
             throw new Error('Stream builder error');
         }
-        return streamHandler<object>(stream, options.contentExtractor!, onStream);
+
+        return streamHandler<object>(
+            stream,
+            options.contentExtractor!,
+            onStream,
+        );
     }
+
     if (!isJsonResponse(resp)) {
         throw new Error(resp.statusText);
     }
 
     const result = await resp.json() as any;
+
     if (!result) {
         throw new Error('Empty response');
     }
+
     if (options.errorExtractor?.(result)) {
-        throw new Error(options.errorExtractor?.(result) || 'Unknown error');
+        throw new Error(
+            options.errorExtractor?.(result)
+            || 'Unknown error',
+        );
     }
 
-    return options.fullContentExtractor?.(result) || '';
+    return cleanReasoningText(
+        options.fullContentExtractor?.(result) || '',
+    );
 }
 
-export async function requestChatCompletions(url: string, header: Record<string, string>, body: any, onStream: ChatStreamTextHandler | null, options: SseChatCompatibleOptions | null): Promise<string> {
+export async function requestChatCompletions(
+    url: string,
+    header: Record<string, string>,
+    body: any,
+    onStream: ChatStreamTextHandler | null,
+    options: SseChatCompatibleOptions | null,
+): Promise<string> {
     const controller = new AbortController();
     const { signal } = controller;
 
     let timeoutID = null;
+
     if (ENV.CHAT_COMPLETE_API_TIMEOUT > 0) {
-        timeoutID = setTimeout(() => controller.abort(), ENV.CHAT_COMPLETE_API_TIMEOUT);
+        timeoutID = setTimeout(
+            () => controller.abort(),
+            ENV.CHAT_COMPLETE_API_TIMEOUT,
+        );
     }
 
     const resp = await fetch(url, {
@@ -113,9 +220,15 @@ export async function requestChatCompletions(url: string, header: Record<string,
         body: JSON.stringify(body),
         signal,
     });
+
     if (timeoutID) {
         clearTimeout(timeoutID);
     }
 
-    return await mapResponseToAnswer(resp, controller, options, onStream);
+    return await mapResponseToAnswer(
+        resp,
+        controller,
+        options,
+        onStream,
+    );
 }
